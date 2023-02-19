@@ -1,136 +1,244 @@
 <!DOCTYPE html>
 <html>
-<body>
-<script>
-var numberOfSongs = 0;
-class Song {
-    constructor(name, artist){
-        this.name = name;
-        this.artist = artist;
-        this._entryTopDate=new Date();
-        this._votes=0;
-    }
-    get entryTopDate() {
-          return this._entryTopDate;
-    }
-    vote(){
-        this._votes++;
-    }
-    getVoteCount(){
-        return this._votes;
-    }
-}
-class HtmlSong extends Song{
-    constructor(name,artist){
-        super(name,artist);
-    }
-    getHTML(){
-        return '<form onsubmit="return submitForm()"><li>'+"Numele melodiei:"+this.name+" Artistul:"+this.artist+
-            " Data melodiei:"+this._entryTopDate.getDate()+"/"+(this._entryTopDate.getMonth()+1)+
-            "/"+this._entryTopDate.getFullYear()+" "+this._entryTopDate.getHours()
-            +":"+this._entryTopDate.getMinutes()+" Voturi:"+this._votes+' <button type="submit">Submit</button> </li></form>';
-    }
-}
-class MusicTop{
-    _songs = [];
-    addsong(name,artist){
-        this._songs[numberOfSongs] = new HtmlSong(name,artist);
-        numberOfSongs++;
-        console.log("Melodia:",name,"a artistului:",artist,"a fost adaugata cu succes.");
-    }
-    getTop(){
-        var x = this._songs.slice();
-        for(var i=0;i<(numberOfSongs-1);i++)
-            for(var j=i+1;j<numberOfSongs;j++)
-            {
-                if(x[i].getVoteCount()<x[j].getVoteCount())
-                {
-                    var temp = x[i];
-                    x[i] = x[j];
-                    x[j] = temp;
-                }
-            }
-        for(var i=0;i<numberOfSongs-1;)
-        {
-            var j=i;
-            if(x[j].getVoteCount()==x[j+1].getVoteCount()){
-            while(x[j].getVoteCount()==x[j+1].getVoteCount())
-                j++;
-            for(var k=i;k<j;k++)
-                for(var h=k+1;h<=j;h++){
-                if(x[k]._entryTopDate.getTime()<x[h]._entryTopDate.getTime())
-                {
-                    var temp = x[k];
-                    x[k] = x[h];
-                    x[h] = temp;
-                }}
-            i=j+1;}
-            else
-            i++;
+  <head>
+    <style>
+      body {
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        height: 100vh;
+        margin: 0;
+        font-family: Georgia;
+      }
+      button {
+        background-color: #01d758;
+        border: none;
+        border-radius: 20px;
+        color: white;
+        padding: 10px 25px;
+        text-decoration: none;
+        margin: 4px 2px;
+        cursor: pointer;
+      }
+      form {
+        border-width: 2px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+      }
+      .input-label {
+        margin: 0;
+        margin-bottom: 10px;
+        margin-top: 15px;
+      }
+      .input-item {
+        width: 100%;
+        margin-bottom: 5px;
+        margin-top: 16px;
+      }
+    </style>
+  </head>
+  <body style="background-color: black">
+    <form>
+      <div>
+        <label for="artist">Artist:</label>
+        <input type="text" id="artist-input" required />
+      </div>
+      <div>
+        <br />
+        <label for="song">Song:</label>
+        <input type="text" id="song-input" required />
+      </div>
+      <br />
+      <button type="button" id="submit-button">Submit</button>
+    </form>
+    <div id="top-container"></div>
+
+    <script>
+      class Song {
+        constructor(name, artist) {
+          this.name = name;
+          this.artist = artist;
+          this._entryTopDate = new Date();
+          this._votes = 0;
+          this.id = this._entryTopDate.getTime();
         }
-        return x;
-    }
-}
-const Song1 = new Song("Sun la S.O.S.","Spania 99");
-console.log("Melodia:",Song1.name);
-console.log("Artistul:",Song1.artist);
-console.log(Song1);
-Song1.vote();
-Song1.vote();
-console.log(Song1);
-console.log(Song1.getVoteCount());
-console.log(Song1.entryTopDate);
+        get entryTopDate() {
+          return this._entryTopDate;
+        }
+        vote() {
+          this._votes++;
+        }
+        getVoteCount() {
+          return this._votes;
+        }
+      }
+      class HtmlSong extends Song {
+        constructor(name, artist) {
+          super(name, artist);
+        }
+        getHTML() {
+          return (
+            '<form onsubmit="return submitForm()"><li>' +
+            "Numele melodiei:" +
+            this.name +
+            " Artistul:" +
+            this.artist +
+            " Data melodiei:" +
+            this._entryTopDate.getDate() +
+            "/" +
+            (this._entryTopDate.getMonth() + 1) +
+            "/" +
+            this._entryTopDate.getFullYear() +
+            " " +
+            this._entryTopDate.getHours() +
+            ":" +
+            this._entryTopDate.getMinutes() +
+            " Voturi:" +
+            this._votes +
+            ' <button type="submit">Vote</button> </li></form>'
+          );
+        }
+      }
+      class MusicTop {
+        _songs = [];
+        addsong(name, artist) {
+          this._songs.push(new HtmlSong(name, artist));
+          console.log(
+            "Melodia:",
+            name,
+            "a artistului:",
+            artist,
+            "a fost adaugata cu succes."
+          );
+        }
+        getTop() {
+          var topCopy = this._songs.slice();
+          topCopy.sort(function (a, b) {
+            if (a.getVoteCount() !== b.getVoteCount()) {
+              return b.getVoteCount() - a.getVoteCount();
+            }
+            return b._entryTopDate.getTime() - a._entryTopDate.getTime();
+          });
+          return topCopy;
+        }
+      }
+      class MusicTopHtmlGenerator {
+      static getHtml(musictop) {
+          var allSongs = musictop.getTop();
+          let html = "<ol>";
+          for (var i = 0; i < allSongs.push(); i++) {
+            html +=
+              "<li>" +
+              "Numele melodiei:" +
+              allSongs[i].name +
+              " Artistul:" +
+              allSongs[i].artist +
+              " Data melodiei:" +
+              allSongs[i]._entryTopDate.getDate() +
+              "/" +
+              (allSongs[i]._entryTopDate.getMonth() + 1) +
+              "/" +
+              allSongs[i]._entryTopDate.getFullYear() +
+              " " +
+              allSongs[i]._entryTopDate.getHours() +
+              ":" +
+              allSongs[i]._entryTopDate.getMinutes() +
+              " Voturi:" +
+              allSongs[i]._votes +
+              ' <button onclick="voteSong(' + allSongs[i].id + ')"">Vote</button> </li>';
+          }
+          html += "</ol>";
+          return html;
+        }
+      }
+      const Song1 = new Song("Sun la S.O.S.", "Spania 99");
+      console.log("Melodia:", Song1.name);
+      console.log("Artistul:", Song1.artist);
+      console.log(Song1);
+      Song1.vote();
+      Song1.vote();
+      console.log(Song1);
+      console.log(Song1.getVoteCount());
+      console.log(Song1.entryTopDate);
 
-const musicTopTest = new MusicTop();
-musicTopTest.addsong("911","Nane");
-musicTopTest.addsong("Ocean","Nane");
-musicTopTest.addsong("La piept","Nane");
-musicTopTest.addsong("Regina noptii","Rava");
-musicTopTest.addsong("Din rai 3","El nino");
-console.log(musicTopTest._songs[0]);
-console.log(musicTopTest._songs[1]);
-console.log("\n");
-console.log(musicTopTest._songs);
-console.log("\n");
-console.log(musicTopTest._songs.entryTopDate);
-musicTopTest._songs[0].vote();
-musicTopTest._songs[0].vote();
-musicTopTest._songs[1].vote();
-musicTopTest._songs[1].vote();
-musicTopTest._songs[1].vote();
-musicTopTest._songs[1].vote();
-musicTopTest._songs[1].vote();
-musicTopTest._songs[1].vote();
-musicTopTest._songs[4].vote();
-musicTopTest._songs[2].vote();
-musicTopTest._songs[2].vote();
-musicTopTest._songs[2].vote();
-musicTopTest._songs[2].vote();
-musicTopTest._songs[3].vote();
-musicTopTest._songs[3].vote();
-musicTopTest._songs[3].vote();
-console.log(musicTopTest._songs[0]);
-console.log(musicTopTest._songs[1]);
-console.log(musicTopTest._songs[2]);
-console.log(musicTopTest._songs[3]);
-console.log(musicTopTest._songs[4]);
-console.log(musicTopTest.getTop());
-console.log("\n");
-console.log(musicTopTest._songs);
-console.log("\n");
-const Song2 = new HtmlSong("Peace","Konoha");
-document.write(Song2.getHTML());
-</script>
+      const musicTopTest = new MusicTop();
+      musicTopTest.addsong("911", "Nane");
+      musicTopTest.addsong("Ocean", "Nane");
+      musicTopTest.addsong("La piept", "Nane");
+      musicTopTest.addsong("Regina noptii", "Rava");
+      musicTopTest.addsong("Din rai 3", "El nino");
+      console.log(musicTopTest._songs[0]);
+      console.log(musicTopTest._songs[1]);
+      console.log("\n");
+      console.log(musicTopTest._songs);
+      console.log("\n");
+      musicTopTest._songs[0].vote();
+      musicTopTest._songs[0].vote();
+      musicTopTest._songs[0].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[1].vote();
+      musicTopTest._songs[4].vote();
+      musicTopTest._songs[2].vote();
+      musicTopTest._songs[2].vote();
+      musicTopTest._songs[2].vote();
+      musicTopTest._songs[2].vote();
+      musicTopTest._songs[3].vote();
+      musicTopTest._songs[3].vote();
+      musicTopTest._songs[3].vote();
+      console.log(musicTopTest._songs[0]);
+      console.log(musicTopTest._songs[1]);
+      console.log(musicTopTest._songs[2]);
+      console.log(musicTopTest._songs[3]);
+      console.log(musicTopTest._songs[4]);
+      console.log(musicTopTest.getTop());
+      console.log("\n");
+      console.log(musicTopTest._songs);
+      console.log("\n");
+      const Song2 = new HtmlSong("Abracadabra", "Arkanian");
+      document.write(Song2.getHTML());
 
+      const html = MusicTopHtmlGenerator.getHtml(musicTopTest);
+      console.log(html);
 
+      const submitButton = document.getElementById("submit-button");
+      const artistInput = document.getElementById("artist-input");
+      const songInput = document.getElementById("song-input");
+      const musicTopContainer = document.getElementById("music-top-container");
 
+      const musicTop = new MusicTop();
 
+      submitButton.addEventListener("click", () => {
+        const songName = songInput.value.trim();
+        const songArtist = artistInput.value.trim();
+        if (songName && songArtist) {
+          musicTop.addsong(songName, songArtist);
+          songName.value = "";
+          songArtist.value = "";
+          const topHtml = MusicTopHtmlGenerator.getHtml(musicTop);
+          const container = document.getElementById("top-container");
+          container.innerHTML = topHtml;
+        }
+      });
+      
+      function refreshMusicTop() {
+          const topContainer = document.getElementById("top-container");
+          topContainer.innerHTML = MusicTopHtmlGenerator.getHtml(musicTop);
+      }
 
-
-
-
-
-
-
-</body>
+      function voteSong(id) {
+          for(var i=0;i<musicTop._songs.push();i++)
+            if(id==musicTop._songs[i].id)
+                musicTop._songs[i].vote();
+          refreshMusicTop();
+      }
+    </script>
+  </body>
 </html>
