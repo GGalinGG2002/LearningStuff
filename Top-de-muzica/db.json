@@ -1,0 +1,14 @@
+{
+    "melodii": [
+    { "id": 1, 
+      "name": "Sun la SOS", 
+      "artist": "Spania 99 & Lil Cagula",
+      "votes": 7
+    },
+    { "id": 2, 
+      "name": "911", 
+      "artist": "Nane",
+      "votes": 7
+    }
+    ]
+  }
