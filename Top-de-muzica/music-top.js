@@ -56,6 +56,13 @@
           );
           addSongtoJSON(name,artist,this._songs[(this._songs.push())-1]._entryTopDate,this._songs[(this._songs.push())-1]._votes,this._songs[(this._songs.push())-1].id);
         }
+        songTransfer(name,artist,date,votes,id)
+        {
+          this._songs.push(new HtmlSong(name,artist));
+          this._songs[(this._songs.push()-1)]._entryTopDate=new Date(date);
+          this._songs[(this._songs.push()-1)].id=id;
+          this._songs[(this._songs.push()-1)]._votes=votes;
+        }
         getTop() {
           var topCopy = this._songs.slice();
           topCopy.sort(function (a, b) {
@@ -103,6 +110,17 @@
 
       const musicTop = new MusicTop();
 
+      fetch('http://localhost:3000/melodii')
+        .then((response) => response.json())
+        .then((json) => addSongstoMusicTopJSON(json));
+
+      function addSongstoMusicTopJSON(obj)
+      {
+        for(var i=0;i<obj.push();i++){
+          musicTop.songTransfer(obj[i].name,obj[i].artist,obj[i].date,obj[i].votes,obj[i].songid);
+        }
+        refreshMusicTop();
+      }
       submitButton.addEventListener("click", () => {
         const songName = songInput.value.trim();
         const songArtist = artistInput.value.trim();
@@ -124,19 +142,51 @@
 
       function voteSong(id) {
           for(var i=0;i<musicTop._songs.push();i++)
-            if(id==musicTop._songs[i].id)
+            if(id==musicTop._songs[i].id){
                 musicTop._songs[i].vote();
+                voteUpdateJSON(id,musicTop._songs[i].getVoteCount());
+            }
+          
           refreshMusicTop();
       }
 
       function addSongtoJSON(name,artist,date,votes,id){
-            jsonObj={
-                "name": name,
-                "artist":artist,
-                "date":date,
-                "votes":votes,
-                "id":id
+            fetch('http://localhost:3000/melodii',{
+                method:'POST',
+                body:JSON.stringify({
+                  name : name,
+                  artist : artist,
+                  date : date,
+                  votes : votes,
+                  songid :id
+              }),
+              headers:{
+                "Content-Type":"application/json; charset=UTF-8"
+              }
+            })
+                .then(response => response.json())
+      }
+
+      function voteUpdateJSON(id,votes){
+        fetch('http://localhost:3000/melodii')
+          .then((response) => response.json())
+          .then((json) => {
+            var x = json;
+            var idno;
+            for(var i=0;i<x.length;i++) {
+              if(id==x[i].songid) {
+                idno=x[i].id;
+              }
             }
-            var str=JSON.stringify(jsonObj);
-            console.log(str);
+            fetch('http://localhost:3000/melodii/'+idno,{
+              method:'PATCH',
+              body:JSON.stringify({
+                votes:votes
+              }),
+              headers:{
+                "Content-Type":"application/json; charset=UTF-8"
+              }
+            })
+            .then(response => response.json())
+          });
       }
