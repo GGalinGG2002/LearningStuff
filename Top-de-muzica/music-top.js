@@ -1,3 +1,5 @@
+      var editButtonid;
+      var editsongindex;
       class Song {
         constructor(name, artist) {
           this.name = name;
@@ -73,6 +75,11 @@
           });
           return topCopy;
         }
+        changeNameAndArtist(id,name,artist)
+        {
+          this._songs[id].name=name;
+          this._songs[id].artist=artist;
+        }
       }
       class MusicTopHtmlGenerator {
       static getHtml(musictop) {
@@ -97,36 +104,43 @@
               allSongs[i]._entryTopDate.getMinutes() +
               " Voturi:" +
               allSongs[i]._votes +
-              ' <button onclick="voteSong(' + allSongs[i].id + ')"">Vote</button> </li>';
+              ' <button onclick="voteSong(' + allSongs[i].id + ')"">Vote</button> '
+              +
+              ' <button onclick="editSong(' + allSongs[i].id + ')"">Edit</button> '
+              +
+              ' <button onclick="deleteSong(' + allSongs[i].id + ')"">Delete</button> </li>';
           }
           html += "</ol>";
           return html;
         }
       }
+
       const submitButton = document.getElementById("submit-button");
+      const searchButton = document.getElementById("search-button");
       const artistInput = document.getElementById("artist-input");
       const songInput = document.getElementById("song-input");
+      const applyButton = document.getElementById("apply-button");
       const musicTopContainer = document.getElementById("music-top-container");
 
       const musicTop = new MusicTop();
 
       fetch('http://localhost:3000/melodii')
         .then((response) => response.json())
-        .then((json) => addSongstoMusicTopJSON(json));
+        .then((json) => addSongstoMusicTopJSON(json))
+        .catch(error => console.log("error: ", error.message));
 
-      function addSongstoMusicTopJSON(obj)
-      {
+      function addSongstoMusicTopJSON(obj){
         for(var i=0;i<obj.push();i++){
           musicTop.songTransfer(obj[i].name,obj[i].artist,obj[i].date,obj[i].votes,obj[i].songid);
         }
         refreshMusicTop();
       }
+
       submitButton.addEventListener("click", () => {
         const songName = songInput.value.trim();
         const songArtist = artistInput.value.trim();
         if (songName && songArtist) {
           musicTop.addsong(songName, songArtist);
-
           songName.value = "";
           songArtist.value = "";
           const topHtml = MusicTopHtmlGenerator.getHtml(musicTop);
@@ -135,6 +149,43 @@
         }
       });
       
+      searchButton.addEventListener("click",() => {
+        const songName = songInput.value.trim();
+        const songArtist = artistInput.value.trim();
+        fetch('http://localhost:3000/melodii')
+        .then((response) => response.json())
+        .then((json) => {
+          var ok=1;
+          for(var i=0;i<json.length&&ok;i++)
+            if(songArtist==json[i]["artist"]&&songName==json[i]["name"]){
+              window.alert("Melodia exista in top!");
+              ok=0;
+            }
+          if(ok)
+            window.alert("Melodia nu exista in top!");
+        })
+        .catch(error => console.log("error: ", error.message));
+      });
+
+      applyButton.addEventListener("click",() =>{
+        const songName = songInput.value.trim();
+        const songArtist = artistInput.value.trim();
+        musicTop.changeNameAndArtist(editsongindex,songName,songArtist);
+        fetch('http://localhost:3000/melodii/'+editButtonid,{
+              method:'PATCH',
+              body:JSON.stringify({
+                name:songName,
+                artist:songArtist
+              }),
+              headers:{
+                "Content-Type":"application/json; charset=UTF-8"
+              }
+            })
+            .then(response => response.json())
+                .catch(error => console.log("error: ", error.message));
+        refreshMusicTop();
+      });
+
       function refreshMusicTop() {
           const topContainer = document.getElementById("top-container");
           topContainer.innerHTML = MusicTopHtmlGenerator.getHtml(musicTop);
@@ -146,7 +197,6 @@
                 musicTop._songs[i].vote();
                 voteUpdateJSON(id,musicTop._songs[i].getVoteCount());
             }
-          
           refreshMusicTop();
       }
 
@@ -158,13 +208,14 @@
                   artist : artist,
                   date : date,
                   votes : votes,
-                  songid :id
+                  songid : id
               }),
               headers:{
                 "Content-Type":"application/json; charset=UTF-8"
               }
             })
                 .then(response => response.json())
+                    .catch(error => console.log("error: ", error.message));
       }
 
       function voteUpdateJSON(id,votes){
@@ -188,5 +239,47 @@
               }
             })
             .then(response => response.json())
+                .catch(error => console.log("error: ", error.message));
+          });
+      }
+
+      function deleteSong(id){
+        fetch('http://localhost:3000/melodii')
+          .then((response) => response.json())
+          .then((json) => {
+            var x = json;
+            var idno;
+            for(var i=0;i<x.length;i++) {
+              if(id==x[i].songid) {
+                idno=x[i].id;
+              }
+            }
+            fetch('http://localhost:3000/melodii/'+idno,{
+              method:'DELETE'
+            })
+            .then(response => response.json())
+                .catch(error => console.log("error: ", error.message));
+          });
+          for(var j=0;j<musicTop._songs.push();j++)
+            if(id==musicTop._songs[j].id)
+                musicTop._songs.splice(j,1);
+          refreshMusicTop();
+      }
+
+      function editSong(id){
+        fetch('http://localhost:3000/melodii')
+          .then((response) => response.json())
+          .then((json) => {
+            var x = json;
+            var idno;
+            for(var i=0;i<x.length;i++) {
+              if(id==x[i].songid) {
+                idno=x[i].id;
+                document.getElementById('artist-input').setAttribute('value',x[i].artist);
+                document.getElementById('song-input').setAttribute('value',x[i].name);
+                editsongindex=i;
+              }
+            }
+            editButtonid=idno;
           });
       }
