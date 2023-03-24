@@ -1,5 +1,2 @@
 # MusicTop
-Top de muzica cu voturi dinamice si js + in curand json and other stuff
-
-npm install -g json-server
-json-server --watch db.json
+Music top with deployed server-sided dynamic votes, adding, edit, delete, search functionalities, full properly working.
